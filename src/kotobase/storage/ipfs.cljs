@@ -1,5 +1,28 @@
 (ns kotobase.storage.ipfs
-  "IPFS block + single-writer IPNS ref implementation."
+  "IPFS block + single-writer IPNS ref implementation.
+
+  **The single-writer profile is the whole design, not a caveat.** IPNS has
+  no compare-and-swap: `name/publish` replaces the record unconditionally.
+  What `-compare-and-set-ref!` does here is read the current name, compare,
+  and publish -- which is only a CAS because `serialize!` funnels every
+  publication through one in-process queue. Two writers in two processes
+  both read the same head, both find it matching, and both publish. The
+  later one wins and the earlier one's commit becomes unreachable, with
+  both told they succeeded.
+
+  So a deployment is correct when, and only when, exactly one process
+  publishes each key. `test/run.cljs` demonstrates the loss executably
+  rather than describing it, because a limit nobody can reproduce tends to
+  get treated as theoretical.
+
+  **Sequence numbers.** Kubo's `name/resolve` returns a path and no record
+  metadata, so this adapter's `:version` for a Kubo-backed name is `nil`
+  and says so. An earlier version returned a counter held in a JS atom
+  inside the client: it started at 0, was never read from any IPNS record,
+  and reset on every process restart -- so it reported version 1 for a name
+  the network held at sequence 400, and two processes reported the same
+  version for different records. A `nil` that means \"this transport does
+  not expose one\" is worth more than a number that means nothing."
   (:require [kotobase.storage.core :as storage]))
 
 (defn- serialize! [queue task]
@@ -97,8 +120,7 @@
                          (js/Object.assign
                           #js {:method "POST"
                                :headers (clj->js headers)}
-                          (clj->js options))))
-        sequences (atom {})]
+                          (clj->js options))))]
     {:put-block!
      (fn [expected-cid bytes]
        (let [form (js/FormData.)]
@@ -138,10 +160,18 @@
                      (fn [body]
                        (let [path (.-Path body)
                              cid (when path (.replace path #"^/ipfs/" ""))]
-                         (when cid
-                           {:cid cid :sequence (get @sequences key 0)}))))))))))
+                         ;; `name/resolve` returns the path and nothing
+                         ;; else -- no sequence, no validity, no signer.
+                         ;; nil is the honest answer; a locally invented
+                         ;; counter would read like record metadata and
+                         ;; be unrelated to the record.
+                         (when cid {:cid cid :sequence nil}))))))))))
      :publish-name!
-     (fn [{:keys [key cid expected-sequence]}]
+     (fn [{:keys [key cid]}]
+       ;; Unconditional by construction. `expected-sequence` is accepted by
+       ;; the protocol and deliberately unused here: Kubo has nothing to
+       ;; condition on, and pretending otherwise is what made the previous
+       ;; version look like a CAS.
        (-> (post (str "name/publish?arg=/ipfs/"
                       (js/encodeURIComponent cid)
                       "&key=" (js/encodeURIComponent key))
@@ -149,11 +179,7 @@
            (.then
             (fn [response]
               (if (.-ok response)
-                (let [sequence
-                      (inc (or (get @sequences key)
-                               expected-sequence 0))]
-                  (swap! sequences assoc key sequence)
-                  {:cid cid :sequence sequence})
+                {:cid cid :sequence nil}
                 (js/Promise.reject
                  (ex-info "IPNS publish failed"
                           {:cid cid :status (.-status response)})))))))}))
