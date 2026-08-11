@@ -1,58 +1,40 @@
 # kotobase-storage-ipfs
 
-IPFS immutable blocks plus a single-writer IPNS ref adapter. IPLD remains the
-shared encoding and is not itself a storage backend. Multi-writer IPNS is
-intentionally outside the linearizable profile.
+Provider-neutral IPFS immutable-block transport for Kotobase.
 
-Pass one `:ipns-key` for a single database, or `:ipns-key-fn` to map each ref
-name to its own Kubo key. Publications are serialized inside the adapter. No
-other process may publish those keys; multi-writer deployments require a
-linearizable external ref service.
+This library has no dependency on a particular node daemon, HTTP RPC API, or
+mutable-name service. It accepts two injected, Promise-returning operations:
 
-## The single-writer profile is the design, not a caveat
-
-IPNS has no compare-and-swap. `name/publish` replaces the record
-unconditionally. What `-compare-and-set-ref!` does here is read the name,
-compare, publish — a CAS only because `serialize!` funnels every publication
-through one in-process queue.
-
-Two writers in two processes both read the same head, both find it matching,
-and both publish. The later wins; the earlier writer's commit becomes
-unreachable; **both are told they succeeded.**
-
-`test/run.cljs` demonstrates that rather than describing it:
-
-```
-ok  - two writer processes are BOTH told they published
-ok  - and only the last one survives -- cid-from-a is lost
+```clojure
+(ipfs/open
+ {:client
+  {:put-block! (fn [expected-cid bytes] ... stored-cid-promise)
+   :get-block  (fn [cid] ... bytes-or-nil-promise)}})
 ```
 
-The test asserts the *loss*, deliberately. If it ever starts failing, either
-IPNS grew a conditional publish or the adapter grew a real lock, and this
-file should be revisited rather than continue documenting a limit that moved.
+The client may use an embedded implementation, a browser implementation, a
+remote pinning service, or another IPFS-compatible transport. Returned bytes
+remain untrusted; compose this adapter with
+`kotobase.storage.verify/async-verifying-block-store` at the application
+boundary.
 
-## Sequence numbers are `nil`, and that is the honest answer
+## Blocks and refs are different planes
 
-Kubo's `name/resolve` returns a path — no sequence, no validity, no signer.
-So `:version` is `nil` for a Kubo-backed name.
+The adapter intentionally implements `IBlockStore` only. A mutable database
+head requires agreement and rollback protection; those guarantees cannot be
+inferred from content-addressed block transport or mutable naming.
 
-An earlier version returned a counter held in a JS atom inside the client. It
-started at 0, was never read from any IPNS record, and reset on every process
-restart: it reported version 1 for a name the network held at sequence 400,
-and two processes reported the same version for different records. A `nil`
-meaning "this transport does not expose one" is worth more than a number
-meaning nothing.
+Compose blocks with a separately selected ref provider:
 
-## What the test mock may not do
+```clojure
+(storage/compose
+ {:blocks (ipfs/open {:client block-client})
+  :refs linearizable-ref-store})
+```
 
-The suite previously ran against a mock whose `publish-name!` performed a
-real compare-and-swap on `expected-sequence` and whose `resolve-name`
-returned the stored sequence. **Kubo does neither.** A green suite against a
-transport stronger than the real one is the single arrangement in which
-passing tells you nothing.
-
-The mock is now weak in exactly the ways Kubo is weak: unconditional publish,
-no sequence.
+The signed commit DAG remains canonical truth. Discovery mechanisms may point
+at a candidate frontier, but they are not used by this adapter and are not a
+correctness dependency.
 
 ## Test
 
