@@ -1,8 +1,28 @@
 {:paths ["src"]
  :deps {io.github.kotoba-lang/kotobase-storage
         {:git/url "https://github.com/kotoba-lang/kotobase-storage.git"
-         :git/sha "c90bc824749fd9afa0799d5e4d74b864647d6280"}}
+         :git/sha "c90bc824749fd9afa0799d5e4d74b864647d6280"}
+        ;; kotobase.storage.ipfs-kotobase + bin/large_put.cljs only --
+        ;; the neutral ipfs.cljs adapter above needs none of these.
+        io.github.kotoba-lang/io-multiformats
+        {:git/url "https://github.com/kotoba-lang/io-multiformats.git"
+         :git/sha "c5963264a8da78ece878b04da18225abdbb84457"}
+        io.github.kotoba-lang/tech-ipfs-specs-unixfs
+        {:git/url "https://github.com/kotoba-lang/tech-ipfs-specs-unixfs.git"
+         :git/sha "7370c94ecc22ffd88f4cb0040ae2407bf3a9d4c7"}
+        io.github.kotoba-lang/io-ipld
+        {:git/url "https://github.com/kotoba-lang/io-ipld.git"
+         :git/sha "daa1fec747af6919b28993278425393c8cc3a277"}
+        io.github.kotoba-lang/io-ipld-car
+        {:git/url "https://github.com/kotoba-lang/io-ipld-car.git"
+         :git/sha "d4f4ea9d7ec16e78d42a02cf3745625a5827fbbf"}
+        io.github.kotoba-lang/dev-protobuf
+        {:git/url "https://github.com/kotoba-lang/dev-protobuf.git"
+         :git/sha "3f20b1e1cdbe89750d8afaf24f64777a2f170c3c"}
+        io.github.kotoba-lang/org-ietf-cbor
+        {:git/url "https://github.com/kotoba-lang/org-ietf-cbor.git"
+         :git/sha "cf2066f8dfa67a2934365519745231b4f1673a1a"}}
  :aliases
- {:cljs-test {:extra-paths ["test"]
+ {:cljs-test {:extra-paths ["test" "bin"]
               :extra-deps {org.clojure/clojurescript
                            {:mvn/version "1.11.132"}}}}}
