@@ -167,10 +167,105 @@ This is the client `kotoba-lang/kotobase-storage-d1`'s `KOTOBASE_AUTHORITY=ipfs`
 option wires in as an additional, non-default block provider (superproject
 ADR-2608281000 Decision 2: "ベースは分散型、中央集権は効率化のための cache").
 
+## A third concrete client: no daemon at all, over `kotobase.storage.ipfs-native`
+
+`ipfs-kubo` (above) removes the kotobase.net roundtrip but still requires
+every deployer to run and lifecycle-manage a separate Go binary (Kubo) --
+a per-platform download, its own process supervision, alongside the JS/nbb
+process that actually wants to store a block. `kotobase.storage.ipfs-native`
+is the kubo-independent alternative the owner asked for after `ipfs-kubo`
+landed: a peer-to-peer block store that runs IN this process, over plain
+TCP sockets to OTHER instances of this same client. Zero external
+processes, zero npm/vendor SDK dependency (an `npm install helia`
+in-process alternative was evaluated first -- see "Why not Helia" below).
+
+```clojure
+(require '[kotobase.storage.ipfs :as ipfs]
+         '[kotobase.storage.ipfs-native :as native])
+
+;; Node A holds a block. Node B has never seen it and is configured with A
+;; as a peer.
+(def a (native/open {:node-id "a" :port 15900}))
+(def b (native/open {:node-id "b" :port 15901
+                      :peers [{:id "a" :host "127.0.0.1" :port 15900}]}))
+
+((:put-block! a) cid bytes)
+((:get-block b) cid) ;; => Promise<bytes>, fetched over a real TCP round
+                      ;;    trip to A the first time; served from B's own
+                      ;;    local cache on every call after that
+
+(def adapter (ipfs/open {:client b}))
+;; adapter is a normal kotobase.storage.core/IBlockStore from here.
+```
+
+It reuses two pieces this workspace already had, unmodified:
+[`kotoba-lang/wire`](https://github.com/kotoba-lang/wire) for the real TCP
+socket I/O + EDN framing (the same library `kotoba-lang/io-libp2p`'s own
+`kotoba.net.transport.tcp` and `kotoba-lang/dtn` already run real sockets
+on), and `kotoba.net.bitswap/respond-to-want`
+(`kotoba-lang/io-libp2p`) for the want/have intersection. Neither of those
+two, on their own, moves block BYTES over any wire -- confirmed by reading
+their source, not assumed (`kotoba.net.bitswap`'s own docstring: "No block
+transfer over any wire"; `kotoba.net.transport.tcp` only ever exchanges
+want-lists/have-lists too). The `:block-get`/`:block-data` request/response
+pair this client adds on top is what actually moves bytes (base64-encoded,
+since `kotoba-lang/wire`'s frame is `pr-str`'d EDN text).
+
+**Precisely what this is not**: not the real IPFS/libp2p bitswap wire
+protocol (`/ipfs/bitswap/1.2.0`) -- it cannot exchange blocks with Kubo,
+js-ipfs/Helia, or any other IPFS implementation, only with other instances
+of this same client. No transport encryption/authentication (every
+configured peer is trusted as given, matching `kotoba.net.transport.tcp`'s
+own documented scope). No peer discovery/DHT (`:peers` is configured up
+front). No CID verification of fetched bytes -- like `ipfs-kubo` and
+`ipfs-kotobase`, that is the caller's job via
+`kotobase.storage.verify/async-verifying-block-store` (see the top of this
+README). This is an operator-controlled mesh (e.g. your own fleet nodes),
+not a hardened open-Internet transport, and not a way to reach the public
+IPFS network.
+
+`kotoba-lang/io-libp2p` also ships a real, publicly-interoperable
+TCP+Noise+Yamux libp2p stack verified against live Kubo/go-libp2p peers --
+but its socket driver (`kotoba.net.libp2p.socket`/`dial`/`node`) is
+JVM-only (`.clj`), while this whole library is `nbb`/ClojureScript.
+Reaching for it would mean porting that socket layer to Node, or making
+this one client JVM-only inside an otherwise all-cljs library -- both a
+bigger lift than the daemon-independence this client is solving for.
+`kotoba.wire.tcp` (already Node-native) is what this client actually uses.
+
+Qualified with real sockets between node handles in one process
+(`test/ipfs_native_test.cljs`, distinct TCP ports, genuine `node:net`
+connections) AND a real two-OS-process demo
+(`bin/native_node_demo.cljs`, mirroring `io-libp2p`'s own
+`tcp_demo.cljs` pattern: spawns a real child `nbb` process, verifies via
+its own printed stdout). NOT yet run across independent machines/fleet
+nodes -- that is a deployment follow-up.
+
+### Why not Helia
+
+Before writing `ipfs-native`, `helia` + `@helia/unixfs` (the official
+js-ipfs successor, embeddable, no separate daemon) was `npm install`ed and
+probed from `nbb` directly. `nbb` DID resolve and `require` it --
+`(require ["helia" :as helia])` returned the real module with
+`createHelia` on it, so the oft-cited "nbb's npm resolution is
+entry-script/cwd relative" hazard was not what stopped this. What stopped
+it: Helia's own async surface did not behave as a plain `js/Promise` under
+nbb/SCI interop in the same call shape this library's other clients use
+(`(.then ...)`/`(.catch ...)` chained off `createHelia()` raised `Could
+not find instance method: then` at the `.catch` call) -- likely an
+interaction between Helia's internal libp2p/async-generator machinery and
+nbb's SCI-hosted interop, not confirmed further. Continuing down that path
+would have meant debugging a 500-package, 383 MB `node_modules` tree's
+interop with a non-standard ClojureScript host, for a dependency the owner
+explicitly wants to avoid growing. `ipfs-native` (this section) reuses
+libraries already in this workspace instead.
+
 ## Test
 
 ```sh
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljs
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_native_test.cljs
+NBB_CP="$(clojure -Spath -M:cljs-test)" nbb bin/native_node_demo.cljs
 ```
