@@ -135,9 +135,42 @@ fetch, UnixFS reassembly, byte comparison — without a working
 `.claude/skills/secrets-location-map/references/kotobase.md` in the
 superproject for why that credential is not reliably available today.
 
+## A second concrete client: any real Kubo node, over `kotobase.storage.ipfs-kubo`
+
+`ipfs-kotobase` (above) talks back to kotobase.net's own archive — a cache
+round trip, not a distinct storage substrate. `kotobase.storage.ipfs-kubo`
+is the client that actually reaches an independently operated Kubo
+(go-ipfs) node's HTTP RPC + gateway (self-hosted, or a Kubo-RPC-compatible
+pinning provider), over `kotoba-lang/io-ipfs`'s pure Kubo protocol model:
+
+```clojure
+(require '[kotobase.storage.ipfs :as ipfs]
+         '[kotobase.storage.ipfs-kubo :as ipfs-kubo])
+
+(def client (ipfs-kubo/open {:api-url "https://ipfs-rpc.example"
+                              :gateway-url "https://ipfs-gateway.example"
+                              :token token}))
+(def adapter (ipfs/open {:client client}))
+;; adapter is a normal kotobase.storage.core/IBlockStore from here --
+;; compose it with a ref store per the "Blocks and refs are different
+;; planes" section above.
+```
+
+Kubo's own computed CID for a block usually matches the caller-assigned
+identity CID (single raw leaves, `cid-version=1` defaults `raw-leaves` to
+true), but is not guaranteed to byte-for-byte across Kubo versions/configs
+-- this client keeps the same small identity->location map as
+`ipfs-kotobase` for the rare block where it doesn't, and `put-block!`
+always resolves to the identity CID regardless.
+
+This is the client `kotoba-lang/kotobase-storage-d1`'s `KOTOBASE_AUTHORITY=ipfs`
+option wires in as an additional, non-default block provider (superproject
+ADR-2608281000 Decision 2: "ベースは分散型、中央集権は効率化のための cache").
+
 ## Test
 
 ```sh
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljs
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljs
 ```

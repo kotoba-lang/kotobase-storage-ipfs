@@ -21,7 +21,12 @@
          :git/sha "3f20b1e1cdbe89750d8afaf24f64777a2f170c3c"}
         io.github.kotoba-lang/org-ietf-cbor
         {:git/url "https://github.com/kotoba-lang/org-ietf-cbor.git"
-         :git/sha "cf2066f8dfa67a2934365519745231b4f1673a1a"}}
+         :git/sha "cf2066f8dfa67a2934365519745231b4f1673a1a"}
+        ;; kotobase.storage.ipfs-kubo only -- a real Kubo HTTP RPC/gateway
+        ;; client, pure-core-over-injected-IHttp. See ADR-2608281000 Decision 2.
+        io.github.kotoba-lang/io-ipfs
+        {:git/url "https://github.com/kotoba-lang/io-ipfs.git"
+         :git/sha "13b40ce06b816e0fcf8069b2e6a86d5c08ff946b"}}
  :aliases
  {:cljs-test {:extra-paths ["test" "bin"]
               :extra-deps {org.clojure/clojurescript
