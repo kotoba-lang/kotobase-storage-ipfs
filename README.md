@@ -241,24 +241,21 @@ connections) AND a real two-OS-process demo
 its own printed stdout). NOT yet run across independent machines/fleet
 nodes -- that is a deployment follow-up.
 
-### Why not Helia
+### Standard Helia / Kubo interoperability
 
-Before writing `ipfs-native`, `helia` + `@helia/unixfs` (the official
-js-ipfs successor, embeddable, no separate daemon) was `npm install`ed and
-probed from `nbb` directly. `nbb` DID resolve and `require` it --
-`(require ["helia" :as helia])` returned the real module with
-`createHelia` on it, so the oft-cited "nbb's npm resolution is
-entry-script/cwd relative" hazard was not what stopped this. What stopped
-it: Helia's own async surface did not behave as a plain `js/Promise` under
-nbb/SCI interop in the same call shape this library's other clients use
-(`(.then ...)`/`(.catch ...)` chained off `createHelia()` raised `Could
-not find instance method: then` at the `.catch` call) -- likely an
-interaction between Helia's internal libp2p/async-generator machinery and
-nbb's SCI-hosted interop, not confirmed further. Continuing down that path
-would have meant debugging a 500-package, 383 MB `node_modules` tree's
-interop with a non-standard ClojureScript host, for a dependency the owner
-explicitly wants to avoid growing. `ipfs-native` (this section) reuses
-libraries already in this workspace instead.
+`kotobase.storage.ipfs-helia/open!` embeds Helia 7 and implements the same
+provider-neutral client shape as the other transports. Helia supplies the
+standard libp2p and `/ipfs/bitswap/1.2.0` protocols, so this client exchanges
+CID-addressed blocks with both Kubo and other Helia nodes without requiring a
+Kubo daemon in the application process. `:peers` accepts standard multiaddrs;
+`:connect!` supports later peer additions; `:close!` stops the embedded node.
+
+The earlier nbb probe incorrectly treated two different Helia surfaces as one:
+Helia 7's `createHelia` returns the node synchronously (then `start` is awaited),
+while `blockstore.get` returns an async iterator. The adapter handles both shapes and
+has an injected-node test plus a real two-implementation Kubo/Helia Bitswap
+qualification. `ipfs-native` remains useful for a small operator-controlled
+mesh, but only `ipfs-helia` is the embedded standards-interoperable transport.
 
 ## Test
 
@@ -267,5 +264,7 @@ nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljs
 nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_native_test.cljs
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_helia_test.cljs
+./bin/helia_kubo_interop.sh
 NBB_CP="$(clojure -Spath -M:cljs-test)" nbb bin/native_node_demo.cljs
 ```
