@@ -34,7 +34,7 @@
 ;; the environment for callers who already handle that themselves.
 
 (ns large-put
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [ipld.car.v2 :as carv2]
             [kotobase.storage.core :as storage]
             [kotobase.storage.ipfs :as ipfs]
