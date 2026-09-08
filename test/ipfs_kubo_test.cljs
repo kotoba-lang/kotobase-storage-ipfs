@@ -6,7 +6,7 @@
   an explicit `:http` seam for exactly this reason (see its docstring), which
   sidesteps the `js/fetch`-global-reassignment hazard `ipfs-kotobase-test.cljs`
   documents without needing a real HTTP double."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.lang.ipfs :as kubo]
             [kotobase.storage.core :as storage]
             [kotobase.storage.ipfs :as ipfs]

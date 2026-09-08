@@ -13,7 +13,7 @@
   `bin/large_put.cljs` pointed at `bin/mock_archive_server.cljs` (README).
   This suite stays smaller and faster: it proves the client's OWN
   identity/location bookkeeping, not the whole UnixFS round trip."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotobase.storage.ipfs-kotobase :as k]
             [multiformats.core :as mf]
             ["node:http" :as http]))
