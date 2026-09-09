@@ -6,3 +6,6 @@
 # cljs scratch
 .cljs_node_repl/
 out/
+
+# nbb dependency cache -- a build artifact, not source
+.nbb/
