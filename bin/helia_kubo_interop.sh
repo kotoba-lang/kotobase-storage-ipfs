@@ -35,4 +35,4 @@ KUBO_INPUT="$TEST_REPO/kubo-block.bin"
 printf '%s' 'kubo-to-helia-standard-bitswap' >"$KUBO_INPUT"
 export KUBO_BLOCK_CID="$(ipfs block put --cid-codec=raw --mhtype=sha2-256 "$KUBO_INPUT")"
 
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_helia_kubo_interop.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/ipfs_helia_kubo_interop.cljk

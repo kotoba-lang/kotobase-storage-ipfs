@@ -100,14 +100,14 @@ machine) — `bin/large_put.cljk` reads it from a file path named by
 ### Try it: `bin/large_put.cljk`
 
 ```sh
-# multiformats.core needs @noble/hashes -- clojure -Spath resolves SOURCE,
+# multiformats.core needs @noble/hashes -- kbb -Spath resolves SOURCE,
 # not node_modules, so `npm install` once wherever io-multiformats lands:
-IO_MF="$(clojure -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
+IO_MF="$(kbb -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
 (cd "${IO_MF%/src}" && npm install)
 
 KOTOBASE_ARCHIVE_TOKEN_FILE=/path/to/token \
 NODE_PATH="${IO_MF%/src}/node_modules" \
-  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/large_put.cljk /path/to/large/file
+  kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" bin/large_put.cljk /path/to/large/file
 ```
 
 It chunks the file, uploads every block (and the CARv2 pack, when it still
@@ -122,9 +122,9 @@ ceiling, digest check, no auth). It needs the same `NODE_PATH` as above
 (it also uses `multiformats.core`):
 
 ```sh
-IO_MF="$(clojure -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
+IO_MF="$(kbb -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
 NODE_PATH="${IO_MF%/src}/node_modules" \
-  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/mock_archive_server.cljk &
+  kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" bin/mock_archive_server.cljk &
 ```
 
 Then point `bin/large_put.cljk` at it with `KOTOBASE_BASE_URL=http://localhost:8998`
@@ -260,11 +260,11 @@ mesh, but only `ipfs-helia` is the embedded standards-interoperable transport.
 ## Test
 
 ```sh
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljk
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljk
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljk
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_native_test.cljk
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_helia_test.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/run.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/ipfs_kubo_test.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/ipfs_native_test.cljk
+kbb --backend sci --classpath "$(kbb -Spath -M:cljs-test)" test/ipfs_helia_test.cljk
 ./bin/helia_kubo_interop.sh
-NBB_CP="$(clojure -Spath -M:cljs-test)" nbb bin/native_node_demo.cljk
+NBB_CP="$(kbb -Spath -M:cljs-test)" kbb --backend sci bin/native_node_demo.cljk
 ```

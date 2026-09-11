@@ -1,4 +1,4 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; A local stand-in for kotobase.net's PUT/GET /ipfs/:cid archive, enforcing
 ;; the SAME contract `kotobase.archive-put` does: raw CIDv1(sha2-256) only,
 ;; body sha256 must equal the CID digest, 4 MiB per-object ceiling. This is

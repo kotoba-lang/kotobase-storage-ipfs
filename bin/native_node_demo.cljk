@@ -9,7 +9,7 @@
 
   Run (NBB_CP is handed to the two CHILD processes; this script itself
   needs no classpath beyond node:child_process):
-    NBB_CP=\"$CP\" nbb bin/native_node_demo.cljk
+    NBB_CP=\"$CP\" kbb --backend sci bin/native_node_demo.cljk
 
   Exit 0 iff the fetched bytes, read back from the child's own printed
   line, match what was served."
