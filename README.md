@@ -43,7 +43,7 @@ backed by kotobase.net's first-party `PUT/GET /ipfs/:cid` archive
 (`kotobase.archive-put` in `net-kotobase/control-plane/kotobase-api-gateway-cljs`).
 That endpoint enforces a **4 MiB per-object ceiling** (it buffers the body
 in Worker memory to hash it — a Worker property, not a B2 one). Rather than
-widening that endpoint, `bin/large_put.cljs` shows the other fix: never ask
+widening that endpoint, `bin/large_put.cljk` shows the other fix: never ask
 it to accept an object anywhere near that size.
 
 ```
@@ -82,7 +82,7 @@ there, and — only when identity and location differ — remembers the
 mapping so `get-block` can still be asked for the identity CID. `put-block!`
 always resolves to the identity CID it was given: the split is invisible
 above this namespace, and the `kotobase.storage.ipfs` adapter's own
-`stored-cid == cid` check is what proves that (`test/ipfs_kotobase_test.cljs`).
+`stored-cid == cid` check is what proves that (`test/ipfs_kotobase_test.cljk`).
 
 ```clojure
 (require '[kotobase.storage.ipfs :as ipfs]
@@ -94,10 +94,10 @@ above this namespace, and the `kotobase.storage.ipfs` adapter's own
 ```
 
 **Never pass the token on argv** (`ps` exposes it to every process on the
-machine) — `bin/large_put.cljs` reads it from a file path named by
+machine) — `bin/large_put.cljk` reads it from a file path named by
 `KOTOBASE_ARCHIVE_TOKEN_FILE`.
 
-### Try it: `bin/large_put.cljs`
+### Try it: `bin/large_put.cljk`
 
 ```sh
 # multiformats.core needs @noble/hashes -- clojure -Spath resolves SOURCE,
@@ -107,7 +107,7 @@ IO_MF="$(clojure -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
 
 KOTOBASE_ARCHIVE_TOKEN_FILE=/path/to/token \
 NODE_PATH="${IO_MF%/src}/node_modules" \
-  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/large_put.cljs /path/to/large/file
+  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/large_put.cljk /path/to/large/file
 ```
 
 It chunks the file, uploads every block (and the CARv2 pack, when it still
@@ -115,7 +115,7 @@ fits under the ceiling), fetches everything back over the network, and
 refuses to call it a success unless the reassembled bytes are identical to
 the original file.
 
-### `bin/mock_archive_server.cljs` — the same round trip without live credentials
+### `bin/mock_archive_server.cljk` — the same round trip without live credentials
 
 A local, loopback HTTP double of the archive's raw-CID contract (4 MiB
 ceiling, digest check, no auth). It needs the same `NODE_PATH` as above
@@ -124,10 +124,10 @@ ceiling, digest check, no auth). It needs the same `NODE_PATH` as above
 ```sh
 IO_MF="$(clojure -Spath -M:cljs-test | tr : $'\n' | grep io-multiformats)"
 NODE_PATH="${IO_MF%/src}/node_modules" \
-  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/mock_archive_server.cljs &
+  nbb --classpath "$(clojure -Spath -M:cljs-test)" bin/mock_archive_server.cljk &
 ```
 
-Then point `bin/large_put.cljs` at it with `KOTOBASE_BASE_URL=http://localhost:8998`
+Then point `bin/large_put.cljk` at it with `KOTOBASE_BASE_URL=http://localhost:8998`
 (any token file still satisfies `-main`'s check; the double does not verify
 it) to exercise the entire pipeline — chunking, upload, CARv2 pack, network
 fetch, UnixFS reassembly, byte comparison — without a working
@@ -234,9 +234,9 @@ bigger lift than the daemon-independence this client is solving for.
 `kotoba.wire.tcp` (already Node-native) is what this client actually uses.
 
 Qualified with real sockets between node handles in one process
-(`test/ipfs_native_test.cljs`, distinct TCP ports, genuine `node:net`
+(`test/ipfs_native_test.cljk`, distinct TCP ports, genuine `node:net`
 connections) AND a real two-OS-process demo
-(`bin/native_node_demo.cljs`, mirroring `io-libp2p`'s own
+(`bin/native_node_demo.cljk`, mirroring `io-libp2p`'s own
 `tcp_demo.cljs` pattern: spawns a real child `nbb` process, verifies via
 its own printed stdout). NOT yet run across independent machines/fleet
 nodes -- that is a deployment follow-up.
@@ -260,11 +260,11 @@ mesh, but only `ipfs-helia` is the embedded standards-interoperable transport.
 ## Test
 
 ```sh
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljs
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljs
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljs
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_native_test.cljs
-nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_helia_test.cljs
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljk
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kotobase_test.cljk
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_kubo_test.cljk
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_native_test.cljk
+nbb --classpath "$(clojure -Spath -M:cljs-test)" test/ipfs_helia_test.cljk
 ./bin/helia_kubo_interop.sh
-NBB_CP="$(clojure -Spath -M:cljs-test)" nbb bin/native_node_demo.cljs
+NBB_CP="$(clojure -Spath -M:cljs-test)" nbb bin/native_node_demo.cljk
 ```

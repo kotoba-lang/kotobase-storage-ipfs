@@ -7,7 +7,7 @@
        io.github.kotoba-lang/kotobase-storage
         {:git/url "https://github.com/kotoba-lang/kotobase-storage.git"
          :git/sha "c90bc824749fd9afa0799d5e4d74b864647d6280"}
-        ;; kotobase.storage.ipfs-kotobase + bin/large_put.cljs only --
+        ;; kotobase.storage.ipfs-kotobase + bin/large_put.cljk only --
         ;; the neutral ipfs.cljs adapter above needs none of these.
         io.github.kotoba-lang/io-multiformats
         {:git/url "https://github.com/kotoba-lang/io-multiformats.git"

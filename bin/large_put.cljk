@@ -26,7 +26,7 @@
 ;;
 ;; Run:
 ;;   KOTOBASE_ARCHIVE_TOKEN_FILE=/path/to/token-file \
-;;     nbb --classpath "<see README>" bin/large_put.cljs <file>
+;;     nbb --classpath "<see README>" bin/large_put.cljk <file>
 ;;
 ;; The token is read from a FILE path (never a CLI arg — argv is visible to
 ;; every process on the machine via `ps`) named by
@@ -134,8 +134,8 @@
                     (when-let [d (ex-data e)] (println (str "  " (pr-str d))))
                     (.exit js/process 1)))))))
 
-;; process.argv under `nbb --classpath <cp> bin/large_put.cljs <file>` is
-;; [node nbb --classpath <cp> bin/large_put.cljs <file> ...] -- `--classpath`
+;; process.argv under `nbb --classpath <cp> bin/large_put.cljk <file>` is
+;; [node nbb --classpath <cp> bin/large_put.cljk <file> ...] -- `--classpath`
 ;; shifts the fixed slice(2) offset, so drop everything up to and including
 ;; this script's own path instead of assuming a position (CLAUDE.md's
 ;; documented `nbb --classpath` argv-shift trap).

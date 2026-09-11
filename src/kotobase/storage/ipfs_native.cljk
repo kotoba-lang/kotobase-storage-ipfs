@@ -66,9 +66,9 @@
     `kotobase.storage.verify/async-verifying-block-store` (this repo's
     top-level README: \"Returned bytes remain untrusted\").
   - Qualified so far only with real sockets between node handles in one
-    process (`test/ipfs_native_test.cljs`, distinct TCP ports, real
+    process (`test/ipfs_native_test.cljk`, distinct TCP ports, real
     `node:net` connections -- not a mock) plus a real 2-OS-process demo
-    (`bin/native_node_demo.cljs`). NOT yet run across independent
+    (`bin/native_node_demo.cljk`). NOT yet run across independent
     machines/fleet nodes -- that is a deployment follow-up, not claimed
     here."
   (:require ["node:net" :as net]
