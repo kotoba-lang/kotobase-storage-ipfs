@@ -19,4 +19,4 @@ jobs:
       # this gate would have been green forever. Checked by breaking a
       # check on purpose.
       - name: contract + adapter checks
-        run: nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljs
+        run: nbb --classpath "$(clojure -Spath -M:cljs-test)" test/run.cljk

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:helia": "nbb --classpath \"$(clojure -Spath -M:cljs-test)\" test/ipfs_helia_test.cljs",
+    "test:helia": "nbb --classpath \"$(clojure -Spath -M:cljs-test)\" test/ipfs_helia_test.cljk",
     "test:interop": "bash bin/helia_kubo_interop.sh"
   },
   "dependencies": {

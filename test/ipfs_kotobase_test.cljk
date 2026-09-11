@@ -10,7 +10,7 @@
 
   The larger, full-pipeline check (`unixfs.file/build` -> this client ->
   `unixfs.file/read-file`, byte-for-byte, over the same kind of double) is
-  `bin/large_put.cljs` pointed at `bin/mock_archive_server.cljs` (README).
+  `bin/large_put.cljk` pointed at `bin/mock_archive_server.cljk` (README).
   This suite stays smaller and faster: it proves the client's OWN
   identity/location bookkeeping, not the whole UnixFS round trip."
   (:require [kotoba.lang.text :as str]

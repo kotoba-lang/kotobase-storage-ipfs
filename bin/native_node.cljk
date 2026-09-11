@@ -1,15 +1,15 @@
 (ns native-node
-  "Minimal CLI used by bin/native_node_demo.cljs to run
+  "Minimal CLI used by bin/native_node_demo.cljk to run
   `kotobase.storage.ipfs-native` nodes as separate OS processes -- the same
   role `kotoba-lang/io-libp2p`'s `bin/net_node.cljs` plays for its own real
   2-process TCP demo. No config file, no auth: dev/demo tool only.
 
   Usage:
-    nbb --classpath \"$CP\" bin/native_node.cljs serve --port 15900 --cid c1 --hex 010203
+    nbb --classpath \"$CP\" bin/native_node.cljk serve --port 15900 --cid c1 --hex 010203
       Starts a node, puts one block (bytes given as a hex string), prints
       NATIVE-NODE-READY, and keeps listening until killed.
 
-    nbb --classpath \"$CP\" bin/native_node.cljs fetch --port 15901 \\
+    nbb --classpath \"$CP\" bin/native_node.cljk fetch --port 15901 \\
         --peer-host 127.0.0.1 --peer-port 15900 --peer-id upstream --cid c1
       Starts a node with one configured peer, fetches --cid, prints
       NATIVE-NODE-FETCHED <hex-bytes-or-MISSING>, and exits."

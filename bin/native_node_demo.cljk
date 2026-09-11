@@ -1,7 +1,7 @@
 (ns native-node-demo
   "Executable proof that `kotobase.storage.ipfs-native` moves real block
   bytes between two INDEPENDENT OS PROCESSES over a real TCP socket -- not
-  just two node handles sharing one Node event loop (test/ipfs_native_test.cljs
+  just two node handles sharing one Node event loop (test/ipfs_native_test.cljk
   already covers that; this is the stronger claim). Mirrors
   `kotoba-lang/io-libp2p`'s own `test/kotoba/net/transport/tcp_demo.cljs`
   pattern: spawn a real child `nbb` process, verify via ITS OWN stdout, not
@@ -9,7 +9,7 @@
 
   Run (NBB_CP is handed to the two CHILD processes; this script itself
   needs no classpath beyond node:child_process):
-    NBB_CP=\"$CP\" nbb bin/native_node_demo.cljs
+    NBB_CP=\"$CP\" nbb bin/native_node_demo.cljk
 
   Exit 0 iff the fetched bytes, read back from the child's own printed
   line, match what was served."
@@ -23,7 +23,7 @@
 (defn- nbb-cp [] (or (aget js/process.env "NBB_CP") ""))
 
 (defn -main []
-  (let [serve (cp/spawn "nbb" (clj->js ["--classpath" (nbb-cp) "bin/native_node.cljs"
+  (let [serve (cp/spawn "nbb" (clj->js ["--classpath" (nbb-cp) "bin/native_node.cljk"
                                         "serve" "--port" (str serve-port) "--cid" cid "--hex" hex]))
         serve-out (atom "")]
     (.on (.-stdout serve) "data" (fn [chunk] (swap! serve-out str (str chunk))))
@@ -36,7 +36,7 @@
                       (.kill serve) (.exit js/process 1))
                   (js/setTimeout #(wait-ready (dec attempts)) 200))))
             (run-fetch! []
-              (let [fetch (cp/spawn "nbb" (clj->js ["--classpath" (nbb-cp) "bin/native_node.cljs"
+              (let [fetch (cp/spawn "nbb" (clj->js ["--classpath" (nbb-cp) "bin/native_node.cljk"
                                                      "fetch" "--port" (str fetch-port)
                                                      "--peer-host" "127.0.0.1" "--peer-port" (str serve-port)
                                                      "--peer-id" "upstream" "--cid" cid]))
