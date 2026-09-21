@@ -140,7 +140,7 @@
 ;; this script's own path instead of assuming a position (CLAUDE.md's
 ;; documented `kbb --backend sci --classpath` argv-shift trap).
 (let [argv (js->clj js/process.argv)
-      self-idx (or (some #(when (str/ends-with? (second %) "large_put.cljs") (first %))
+      self-idx (or (some #(when (str/ends-with? (second %) "large_put.cljk") (first %))
                          (map-indexed vector argv))
                    1)]
   (apply -main (vec (drop (inc self-idx) argv))))
